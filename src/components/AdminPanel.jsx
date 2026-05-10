@@ -7,6 +7,7 @@ import {
 } from '../hooks/useAboutContent.js'
 import { isSupabaseConfigured } from '../services/aboutContentApi.js'
 import { getAdminSession, signInAdmin, signOutAdmin } from '../services/supabaseAuth.js'
+import { uploadProfileImage } from '../services/supabaseStorage.js'
 import Icon from './Icon.jsx'
 import useAboutContent from '../hooks/useAboutContent.js'
 
@@ -184,6 +185,8 @@ function AboutEditor({ onBack }) {
   const currentAboutContent = useAboutContent()
   const [formData, setFormData] = useState(loadLocalAboutContent)
   const [status, setStatus] = useState('')
+  const [uploadStatus, setUploadStatus] = useState('')
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
@@ -227,6 +230,29 @@ function AboutEditor({ onBack }) {
     setStatus('Restored to default About content.')
   }
 
+  const handleProfileImageUpload = async (event) => {
+    const [file] = event.target.files
+
+    if (!file) {
+      return
+    }
+
+    setUploadStatus('')
+    setIsUploadingImage(true)
+
+    try {
+      const imageUrl = await uploadProfileImage(file)
+
+      updateField('portraitUrl', imageUrl)
+      setUploadStatus('Profile image uploaded. Save changes to publish it.')
+    } catch (error) {
+      setUploadStatus(error.message)
+    } finally {
+      setIsUploadingImage(false)
+      event.target.value = ''
+    }
+  }
+
   return (
     <section className="mx-auto max-w-6xl px-5 py-10">
       <button className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-cyan-700" onClick={onBack} type="button">
@@ -254,22 +280,41 @@ function AboutEditor({ onBack }) {
               className="aspect-square w-full rounded-xl border border-slate-200 object-cover"
               src={formData.portraitUrl || defaultAboutContent.portraitUrl}
             />
-            <label className="block">
+            <div>
               <span className="mb-2 block text-sm font-semibold text-slate-700">
-                Profile Image URL
+                Profile Image
               </span>
-              <input
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none transition-all focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
-                onChange={(event) => updateField('portraitUrl', event.target.value)}
-                placeholder="Paste a Supabase Storage public image URL"
-                type="url"
-                value={formData.portraitUrl}
-              />
+              <label className="mb-3 inline-flex cursor-pointer items-center gap-2 rounded-xl bg-cyan-600 px-4 py-3 font-semibold text-white transition-all hover:bg-cyan-700 active:scale-95">
+                <Icon className="text-[20px]">upload</Icon>
+                {isUploadingImage ? 'Uploading...' : 'Upload Photo'}
+                <input
+                  accept="image/*"
+                  className="sr-only"
+                  disabled={isUploadingImage}
+                  onChange={handleProfileImageUpload}
+                  type="file"
+                />
+              </label>
+              {uploadStatus && (
+                <p className="mb-3 text-sm leading-6 text-slate-600">{uploadStatus}</p>
+              )}
+              <label className="block">
+                <span className="mb-2 block text-sm font-semibold text-slate-700">
+                  Image URL
+                </span>
+                <input
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none transition-all focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+                  onChange={(event) => updateField('portraitUrl', event.target.value)}
+                  placeholder="Uploaded image URL appears here"
+                  type="url"
+                  value={formData.portraitUrl}
+                />
+              </label>
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                Upload your new profile photo to Supabase Storage, copy its public URL,
-                and paste it here.
+                Upload a photo from your device. The URL is filled automatically after
+                Supabase Storage accepts the upload.
               </p>
-            </label>
+            </div>
           </div>
 
           <div className="grid gap-5 md:grid-cols-2">
