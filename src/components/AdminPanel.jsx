@@ -248,6 +248,30 @@ function AboutEditor({ onBack }) {
 
       <form className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]" onSubmit={handleSubmit}>
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+          <div className="mb-6 grid gap-5 rounded-2xl border border-slate-200 bg-slate-50 p-5 md:grid-cols-[160px_minmax(0,1fr)]">
+            <img
+              alt="Profile preview"
+              className="aspect-square w-full rounded-xl border border-slate-200 object-cover"
+              src={formData.portraitUrl || defaultAboutContent.portraitUrl}
+            />
+            <label className="block">
+              <span className="mb-2 block text-sm font-semibold text-slate-700">
+                Profile Image URL
+              </span>
+              <input
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none transition-all focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+                onChange={(event) => updateField('portraitUrl', event.target.value)}
+                placeholder="Paste a Supabase Storage public image URL"
+                type="url"
+                value={formData.portraitUrl}
+              />
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                Upload your new profile photo to Supabase Storage, copy its public URL,
+                and paste it here.
+              </p>
+            </label>
+          </div>
+
           <div className="grid gap-5 md:grid-cols-2">
             {textFields.map((field) => (
               <label className="block" key={field.name}>

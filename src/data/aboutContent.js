@@ -4,6 +4,7 @@ export const aboutContentStorageKey = 'miles-about-content'
 
 export const defaultAboutContent = {
   fullName: profile.fullName,
+  portraitUrl: profile.portrait,
   title: profile.title,
   education: profile.education,
   university: profile.university,

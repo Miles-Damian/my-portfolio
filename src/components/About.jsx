@@ -5,6 +5,7 @@ import RevealItem from './RevealItem.jsx'
 
 export default function About() {
   const aboutContent = useAboutContent()
+  const portraitSource = aboutContent.portraitUrl || profile.portrait
 
   return (
     <section className="mx-auto max-w-container-max px-margin-mobile py-24 md:px-margin-desktop xl:max-w-[1500px]" id="about">
@@ -14,7 +15,7 @@ export default function About() {
             <img
               alt="Professional portrait"
               className="profile-portrait relative z-10 mx-auto mb-8 aspect-square w-full max-w-[260px] rounded-xl border-2 border-primary object-cover shadow-[0_0_32px_rgba(165,231,255,0.18)] xl:max-w-[340px]"
-              src={profile.portrait}
+              src={portraitSource}
             />
             <h3 className="relative z-10 mb-2 text-center font-headline-lg text-headline-lg text-on-surface xl:text-[40px]">
               {aboutContent.title}
