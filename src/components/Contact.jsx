@@ -24,7 +24,8 @@ export default function Contact() {
     setFormStatus('')
     setIsSubmitting(true)
 
-    const formData = new FormData(event.currentTarget)
+    const form = event.currentTarget
+    const formData = new FormData(form)
     const payload = {
       email: formData.get('email'),
       message: formData.get('message'),
@@ -45,7 +46,7 @@ export default function Contact() {
         throw new Error(errorDetails?.error || 'Unable to send message.')
       }
 
-      event.currentTarget.reset()
+      form.reset()
       setFormStatus('Message sent. I will get back to you soon.')
     } catch (error) {
       setFormStatus(error.message)
