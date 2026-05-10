@@ -1,3 +1,22 @@
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
 body {
   min-height: max(884px, 100dvh);
   background-color: #0e1417;
@@ -54,8 +73,12 @@ body {
 }
 
 .section-reveal {
-  opacity: 1;
-  transform: none;
+  opacity: 0;
+  transform: translateY(48px);
+  transition:
+    opacity 0.45s ease,
+    transform 0.45s ease;
+  will-change: opacity, transform;
 }
 
 .section-reveal-visible {

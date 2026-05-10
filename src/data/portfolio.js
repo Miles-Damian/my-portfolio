@@ -22,7 +22,7 @@ export const profile = {
   graduationDate: 'July 18, 2025',
   portrait: profilePic,
   summary:
-    'I build responsive, modern, and user-friendly websites for businesses and organizations. Specializing in high-performance digital solutions.',
+    'I create practical websites and admin tools for businesses, with clean interfaces, responsive layouts, and features that are easy to manage.',
 }
 
 export const highlights = [
@@ -130,5 +130,5 @@ export const contactItems = [
     url: 'https://www.facebook.com/Chronosssssssssssssssssssssssssssssss',
   },
   { label: 'GITHUB', value: 'github.com/Miles-Damian', icon: 'terminal', url:'https://github.com/Miles-Damian' },
-  { label: 'LOCATION', value: 'Manila, Philippines', icon: 'location_on' },
+  { label: 'LOCATION', value: 'Pura, Tarlac, Philippines', icon: 'location_on' },
 ]

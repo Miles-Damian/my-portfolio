@@ -17,38 +17,23 @@ export default function RevealItem({
       return undefined
     }
 
-    let frameId = null
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true)
+          observer.unobserve(entry.target)
+        }
+      },
+      {
+        rootMargin: '0px 0px -18% 0px',
+        threshold: 0.1,
+      },
+    )
 
-    const updateVisibility = () => {
-      const rect = element.getBoundingClientRect()
-      const triggerPoint = window.innerHeight * 0.82
-      const shouldShow = rect.top < triggerPoint && rect.bottom > 0
-
-      setIsVisible(shouldShow)
-    }
-
-    const handleScroll = () => {
-      if (frameId) {
-        return
-      }
-
-      frameId = window.requestAnimationFrame(() => {
-        updateVisibility()
-        frameId = null
-      })
-    }
-
-    updateVisibility()
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    window.addEventListener('resize', handleScroll)
+    observer.observe(element)
 
     return () => {
-      window.removeEventListener('scroll', handleScroll)
-      window.removeEventListener('resize', handleScroll)
-
-      if (frameId) {
-        window.cancelAnimationFrame(frameId)
-      }
+      observer.disconnect()
     }
   }, [])
 

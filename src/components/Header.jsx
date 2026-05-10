@@ -103,7 +103,7 @@ export default function Header() {
         </div>
 
         <div
-          className={`relative left-1/2 grid w-[calc(100vw-32px)] -translate-x-1/2 transition-all duration-300 min-[927px]:hidden ${
+          className={`grid w-full transition-all duration-300 min-[927px]:hidden ${
             isMenuOpen ? 'grid-rows-[1fr] pt-4 opacity-100' : 'grid-rows-[0fr] opacity-0'
           }`}
         >

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { contactItems } from '../data/portfolio.js'
 import Icon from './Icon.jsx'
 import RevealItem from './RevealItem.jsx'
@@ -15,21 +16,59 @@ function ContactIcon({ icon }) {
 }
 
 export default function Contact() {
+  const [formStatus, setFormStatus] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    setFormStatus('')
+    setIsSubmitting(true)
+
+    const formData = new FormData(event.currentTarget)
+    const payload = {
+      email: formData.get('email'),
+      message: formData.get('message'),
+      name: formData.get('name'),
+    }
+
+    try {
+      const response = await fetch('/api/contact', {
+        body: JSON.stringify(payload),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+      })
+
+      if (!response.ok) {
+        const errorDetails = await response.json().catch(() => null)
+        throw new Error(errorDetails?.error || 'Unable to send message.')
+      }
+
+      event.currentTarget.reset()
+      setFormStatus('Message sent. I will get back to you soon.')
+    } catch (error) {
+      setFormStatus(error.message)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
-    <section className="mx-auto max-w-container-max px-margin-mobile py-24 md:px-margin-desktop" id="contact">
-      <div className="grid gap-12 md:grid-cols-2">
-        <div>
-          <RevealItem as="h2" className="mb-6 font-headline-lg text-headline-lg text-on-surface" delay={80}>
+    <section className="mx-auto max-w-container-max overflow-hidden px-margin-mobile py-16 md:px-margin-desktop md:py-24" id="contact">
+      <div className="grid min-w-0 gap-10 md:grid-cols-2 md:gap-12">
+        <div className="min-w-0">
+          <RevealItem as="h2" className="mb-6 max-w-full font-headline-lg text-headline-lg text-on-surface max-[360px]:text-[28px]" delay={80}>
             Let's build <span className="text-primary">something together</span>
           </RevealItem>
-          <RevealItem as="p" className="mb-12 text-on-surface-variant" delay={160}>
+          <RevealItem as="p" className="mb-10 max-w-full text-on-surface-variant md:mb-12" delay={160}>
             Have a project in mind? Reach out and let's discuss how we can bring your
             vision to life.
           </RevealItem>
           <div className="space-y-6">
             {contactItems.map((item, index) => (
               <RevealItem
-                className="glass-card flex cursor-pointer items-center gap-4 rounded-xl p-4 transition-colors hover:border-primary"
+                className="glass-card flex min-w-0 cursor-pointer items-start gap-3 rounded-xl p-4 transition-colors hover:border-primary sm:items-center sm:gap-4"
                 delay={240 + index * 85}
                 as={item.url ? 'a' : 'div'}
                 href={item.url}
@@ -37,28 +76,22 @@ export default function Contact() {
                 rel={item.url ? 'noreferrer' : undefined}
                 target={item.url ? '_blank' : undefined}
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <ContactIcon icon={item.icon} />
                 </div>
-                <div>
+                <div className="min-w-0 flex-1 overflow-hidden">
                   <div className="text-label-xs text-outline">{item.label}</div>
-                  <div className="font-code-md text-on-surface">{item.value}</div>
+                  <div className="break-all font-code-md text-[12px] leading-relaxed text-on-surface sm:text-code-md">
+                    {item.value}
+                  </div>
                 </div>
               </RevealItem>
             ))}
           </div>
         </div>
 
-        <RevealItem className="glass-card rounded-xl p-8" delay={260}>
-          <form
-            action="https://formsubmit.co/damianmilesdavid@gmail.com"
-            className="space-y-6"
-            method="POST"
-          >
-            <input name="_captcha" type="hidden" value="false" />
-            <input name="_subject" type="hidden" value="New portfolio inquiry" />
-            <input name="_template" type="hidden" value="table" />
-            <input className="hidden" name="_honey" tabIndex="-1" type="text" />
+        <RevealItem className="glass-card rounded-xl p-5 md:p-8" delay={260}>
+          <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label className="mb-2 block font-code-md text-outline" htmlFor="name">
                 // Name
@@ -98,9 +131,18 @@ export default function Contact() {
                 rows="4"
               />
             </div>
-            <button className="w-full rounded-lg bg-primary py-4 font-bold text-on-primary shadow-lg transition-all hover:shadow-primary/30 active:scale-95" type="submit">
-              Send Message
+            <button
+              className="w-full rounded-lg bg-primary py-4 font-bold text-on-primary shadow-lg transition-all hover:shadow-primary/30 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={isSubmitting}
+              type="submit"
+            >
+              {isSubmitting ? 'Sending...' : 'Send Message'}
             </button>
+            {formStatus && (
+              <p className="text-center font-code-md text-code-md text-primary">
+                {formStatus}
+              </p>
+            )}
           </form>
         </RevealItem>
       </div>
