@@ -21,6 +21,11 @@ export default function Header() {
     let animationFrameId = 0
 
     const updateActiveSection = () => {
+      if (window.scrollY < 120) {
+        setActiveSection(navLinks[0].href)
+        return
+      }
+
       const headerOffset = 96
       const viewportTop = headerOffset
       const viewportBottom = window.innerHeight
@@ -66,7 +71,7 @@ export default function Header() {
     <header className="fixed top-0 z-50 w-full border-b border-primary/15 bg-surface/80 shadow-[0_0_20px_rgba(165,231,255,0.1)] backdrop-blur-xl">
       <nav className="mx-auto max-w-container-max px-margin-mobile py-4 min-[927px]:px-margin-desktop">
         <div className="flex items-center justify-between">
-          <a className="flex items-center gap-2" href="#home" onClick={() => setIsMenuOpen(false)}>
+          <a className="flex items-center gap-2" href="#top" onClick={() => setIsMenuOpen(false)}>
             <Icon className="text-primary">terminal</Icon>
             <span className="font-headline-lg text-headline-lg font-bold text-primary">
               {profile.name}

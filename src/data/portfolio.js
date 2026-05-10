@@ -3,7 +3,7 @@ import bbjviImage from '../assets/websites-created/bbjvi.png'
 import insightImage from '../assets/websites-created/insight.png'
 
 export const navLinks = [
-  { label: 'Home', href: '#home', icon: 'home' },
+  { label: 'Home', href: '#top', icon: 'home' },
   { label: 'About', href: '#about', icon: 'person' },
   { label: 'Skills', href: '#skills', icon: 'bolt' },
   { label: 'Projects', href: '#projects', icon: 'work' },

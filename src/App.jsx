@@ -27,6 +27,7 @@ export default function App() {
 
   return (
     <>
+      <div id="top" />
       <Header />
       <main className="pt-24">
         <SectionReveal>
