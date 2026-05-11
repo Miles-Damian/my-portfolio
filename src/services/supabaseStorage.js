@@ -1,3 +1,5 @@
+import { getValidAdminAccessToken } from './supabaseAuth.js'
+
 const defaultBucket = 'portfolio'
 
 function getSupabaseConfig() {
@@ -5,14 +7,6 @@ function getSupabaseConfig() {
     anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY,
     bucket: import.meta.env.VITE_SUPABASE_STORAGE_BUCKET || defaultBucket,
     url: import.meta.env.VITE_SUPABASE_URL,
-  }
-}
-
-function getSessionToken() {
-  try {
-    return window.localStorage.getItem('miles-admin-access-token')
-  } catch {
-    return null
   }
 }
 
@@ -25,15 +19,12 @@ function createSafeFileName(prefix, fileName) {
 
 async function uploadImage(file, folder, prefix, errorMessage) {
   const { anonKey, bucket, url } = getSupabaseConfig()
-  const token = getSessionToken()
 
   if (!anonKey || !url) {
     throw new Error('Supabase env vars are missing.')
   }
 
-  if (!token) {
-    throw new Error('Please sign in before uploading an image.')
-  }
+  const token = await getValidAdminAccessToken()
 
   const normalizedUrl = url.replace(/\/$/, '')
   const path = `${folder}/${createSafeFileName(prefix, file.name)}`

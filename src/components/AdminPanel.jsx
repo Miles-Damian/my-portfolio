@@ -244,8 +244,8 @@ function AboutEditor({ onBack }) {
     try {
       await saveAboutContent(formData)
       setStatus(isSupabaseConfigured() ? 'Saved to Supabase.' : 'Saved locally. Add Supabase env vars to publish globally.')
-    } catch {
-      setStatus('Unable to save to Supabase. Check your table, keys, and policies.')
+    } catch (error) {
+      setStatus(error.message || 'Unable to save to Supabase. Check your table, keys, and policies.')
     } finally {
       setIsSaving(false)
     }
@@ -540,8 +540,8 @@ function ProjectsEditor({ onBack }) {
       setFormData(projectsToSave)
       setTagText(createTagText(projectsToSave))
       setStatus(isProjectsSupabaseConfigured() ? 'Saved to Supabase.' : 'Saved locally. Add Supabase env vars to publish globally.')
-    } catch {
-      setStatus('Unable to save to Supabase. Check your table, keys, and policies.')
+    } catch (error) {
+      setStatus(error.message || 'Unable to save to Supabase. Check your table, keys, and policies.')
     } finally {
       setIsSaving(false)
     }

@@ -1,4 +1,5 @@
 import { defaultAboutContent } from '../data/aboutContent.js'
+import { getValidAdminAccessToken } from './supabaseAuth.js'
 
 const tableName = 'about_content'
 const recordId = 'about'
@@ -16,17 +17,8 @@ function hasSupabaseConfig() {
   return Boolean(anonKey && url)
 }
 
-function getSessionToken() {
-  try {
-    return window.localStorage.getItem('miles-admin-access-token')
-  } catch {
-    return null
-  }
-}
-
-function createHeaders(useSession = false) {
+function createHeaders(token = null) {
   const { anonKey } = getSupabaseConfig()
-  const token = useSession ? getSessionToken() : null
 
   return {
     apikey: anonKey,
@@ -72,14 +64,16 @@ export async function saveAboutContentToSupabase(content) {
       updated_at: new Date().toISOString(),
     }),
     headers: {
-      ...createHeaders(true),
+      ...createHeaders(await getValidAdminAccessToken()),
       Prefer: 'resolution=merge-duplicates',
     },
     method: 'POST',
   })
 
   if (!response.ok) {
-    throw new Error('Unable to save About content to Supabase.')
+    const errorDetails = await response.json().catch(() => null)
+
+    throw new Error(errorDetails?.message || 'Unable to save About content to Supabase.')
   }
 
   return true
