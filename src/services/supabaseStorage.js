@@ -16,14 +16,14 @@ function getSessionToken() {
   }
 }
 
-function createSafeFileName(fileName) {
+function createSafeFileName(prefix, fileName) {
   const extension = fileName.split('.').pop() || 'jpg'
   const timestamp = Date.now()
 
-  return `profile-${timestamp}.${extension.toLowerCase()}`
+  return `${prefix}-${timestamp}.${extension.toLowerCase()}`
 }
 
-export async function uploadProfileImage(file) {
+async function uploadImage(file, folder, prefix, errorMessage) {
   const { anonKey, bucket, url } = getSupabaseConfig()
   const token = getSessionToken()
 
@@ -36,7 +36,7 @@ export async function uploadProfileImage(file) {
   }
 
   const normalizedUrl = url.replace(/\/$/, '')
-  const path = `about/${createSafeFileName(file.name)}`
+  const path = `${folder}/${createSafeFileName(prefix, file.name)}`
   const uploadUrl = `${normalizedUrl}/storage/v1/object/${bucket}/${path}`
   const publicUrl = `${normalizedUrl}/storage/v1/object/public/${bucket}/${path}`
 
@@ -54,8 +54,16 @@ export async function uploadProfileImage(file) {
   if (!response.ok) {
     const errorDetails = await response.json().catch(() => null)
 
-    throw new Error(errorDetails?.message || 'Unable to upload profile image.')
+    throw new Error(errorDetails?.message || errorMessage)
   }
 
   return publicUrl
+}
+
+export async function uploadProfileImage(file) {
+  return uploadImage(file, 'about', 'profile', 'Unable to upload profile image.')
+}
+
+export async function uploadProjectImage(file) {
+  return uploadImage(file, 'projects', 'project', 'Unable to upload project image.')
 }

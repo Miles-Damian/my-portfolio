@@ -1,7 +1,9 @@
-import { projects } from '../data/portfolio.js'
+import useProjectsContent from '../hooks/useProjectsContent.js'
 import RevealItem from './RevealItem.jsx'
 
 export default function Projects() {
+  const projects = useProjectsContent()
+
   return (
     <section className="mx-auto max-w-container-max px-margin-mobile py-24 md:px-margin-desktop" id="projects">
       <RevealItem as="h2" className="mb-12 flex items-center gap-4 font-headline-lg text-headline-lg text-on-surface" delay={80}>

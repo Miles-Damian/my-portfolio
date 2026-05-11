@@ -1,15 +1,23 @@
 import { useEffect, useState } from 'react'
 import { defaultAboutContent } from '../data/aboutContent.js'
+import { defaultProjectsContent } from '../data/projectsContent.js'
 import {
   loadLocalAboutContent,
   resetAboutContent,
   saveAboutContent,
 } from '../hooks/useAboutContent.js'
+import {
+  loadLocalProjectsContent,
+  resetProjectsContent,
+  saveProjectsContent,
+} from '../hooks/useProjectsContent.js'
 import { isSupabaseConfigured } from '../services/aboutContentApi.js'
+import { isProjectsSupabaseConfigured } from '../services/projectsContentApi.js'
 import { getAdminSession, signInAdmin, signOutAdmin } from '../services/supabaseAuth.js'
-import { uploadProfileImage } from '../services/supabaseStorage.js'
+import { uploadProfileImage, uploadProjectImage } from '../services/supabaseStorage.js'
 import Icon from './Icon.jsx'
 import useAboutContent from '../hooks/useAboutContent.js'
+import useProjectsContent from '../hooks/useProjectsContent.js'
 
 const textFields = [
   { label: 'Full Name', name: 'fullName' },
@@ -49,6 +57,25 @@ const modules = [
     title: 'Site Settings',
   },
 ]
+
+const blankProject = {
+  description: '',
+  image: '',
+  liveUrl: '',
+  tags: [],
+  title: 'New Project',
+}
+
+function parseTagText(value) {
+  return value
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+}
+
+function createTagText(projects) {
+  return projects.map((project) => (Array.isArray(project.tags) ? project.tags.join(', ') : ''))
+}
 
 function LoginScreen({ onLogin }) {
   const [email, setEmail] = useState('')
@@ -190,7 +217,7 @@ function AboutEditor({ onBack }) {
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
-    setFormData(currentAboutContent)
+    queueMicrotask(() => setFormData(currentAboutContent))
   }, [currentAboutContent])
 
   const updateField = (fieldName, value) => {
@@ -306,7 +333,7 @@ function AboutEditor({ onBack }) {
                   className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none transition-all focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
                   onChange={(event) => updateField('portraitUrl', event.target.value)}
                   placeholder="Uploaded image URL appears here"
-                  type="url"
+                  type="text"
                   value={formData.portraitUrl}
                 />
               </label>
@@ -410,6 +437,307 @@ function AboutEditor({ onBack }) {
   )
 }
 
+function ProjectsEditor({ onBack }) {
+  const currentProjectsContent = useProjectsContent()
+  const [formData, setFormData] = useState(loadLocalProjectsContent)
+  const [tagText, setTagText] = useState(() => createTagText(loadLocalProjectsContent()))
+  const [status, setStatus] = useState('')
+  const [uploadStatus, setUploadStatus] = useState('')
+  const [uploadingIndex, setUploadingIndex] = useState(null)
+  const [isSaving, setIsSaving] = useState(false)
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      setFormData(currentProjectsContent)
+      setTagText(createTagText(currentProjectsContent))
+    })
+  }, [currentProjectsContent])
+
+  const updateProject = (index, fieldName, value) => {
+    setFormData((currentData) =>
+      currentData.map((project, projectIndex) =>
+        projectIndex === index ? { ...project, [fieldName]: value } : project,
+      ),
+    )
+  }
+
+  const updateProjectTags = (index, value) => {
+    setTagText((currentText) =>
+      currentText.map((text, textIndex) => (textIndex === index ? value : text)),
+    )
+  }
+
+  const addProject = () => {
+    setFormData((currentData) => [...currentData, { ...blankProject }])
+    setTagText((currentText) => [...currentText, ''])
+    setStatus('')
+  }
+
+  const removeProject = (index) => {
+    setFormData((currentData) => currentData.filter((_, projectIndex) => projectIndex !== index))
+    setTagText((currentText) => currentText.filter((_, textIndex) => textIndex !== index))
+    setStatus('')
+  }
+
+  const moveProject = (index, direction) => {
+    const targetIndex = index + direction
+
+    if (targetIndex < 0 || targetIndex >= formData.length) {
+      return
+    }
+
+    setFormData((currentData) => {
+      const nextData = [...currentData]
+      const [project] = nextData.splice(index, 1)
+
+      nextData.splice(targetIndex, 0, project)
+      return nextData
+    })
+    setTagText((currentText) => {
+      const nextText = [...currentText]
+      const [text] = nextText.splice(index, 1)
+
+      nextText.splice(targetIndex, 0, text)
+      return nextText
+    })
+  }
+
+  const handleImageUpload = async (event, index) => {
+    const [file] = event.target.files
+
+    if (!file) {
+      return
+    }
+
+    setUploadStatus('')
+    setUploadingIndex(index)
+
+    try {
+      const imageUrl = await uploadProjectImage(file)
+
+      updateProject(index, 'image', imageUrl)
+      setUploadStatus('Project image uploaded. Save changes to publish it.')
+    } catch (error) {
+      setUploadStatus(error.message)
+    } finally {
+      setUploadingIndex(null)
+      event.target.value = ''
+    }
+  }
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    setIsSaving(true)
+    setStatus('')
+
+    try {
+      const projectsToSave = formData.map((project, index) => ({
+        ...project,
+        tags: parseTagText(tagText[index] ?? ''),
+      }))
+
+      await saveProjectsContent(projectsToSave)
+      setFormData(projectsToSave)
+      setTagText(createTagText(projectsToSave))
+      setStatus(isProjectsSupabaseConfigured() ? 'Saved to Supabase.' : 'Saved locally. Add Supabase env vars to publish globally.')
+    } catch {
+      setStatus('Unable to save to Supabase. Check your table, keys, and policies.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleReset = () => {
+    resetProjectsContent()
+    setFormData(defaultProjectsContent)
+    setTagText(createTagText(defaultProjectsContent))
+    setStatus('Restored to default Projects content.')
+  }
+
+  return (
+    <section className="mx-auto max-w-6xl px-5 py-10">
+      <button className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-cyan-700" onClick={onBack} type="button">
+        <Icon className="text-[18px]">arrow_back</Icon>
+        Back to dashboard
+      </button>
+
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-950">Projects</h1>
+          <p className="mt-2 text-slate-600">
+            Manage the featured project cards shown on the public portfolio.
+          </p>
+        </div>
+        <span className={`rounded-full px-4 py-2 text-sm font-semibold ${isProjectsSupabaseConfigured() ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+          {isProjectsSupabaseConfigured() ? 'Supabase connected' : 'Local mode'}
+        </span>
+      </div>
+
+      <form className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]" onSubmit={handleSubmit}>
+        <div className="space-y-6">
+          {formData.map((project, index) => (
+            <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8" key={`project-editor-${index}`}>
+              <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <span className="text-sm font-semibold uppercase tracking-wider text-cyan-700">
+                    Project {index + 1}
+                  </span>
+                  <h2 className="mt-1 text-xl font-bold text-slate-950">
+                    {project.title || 'Untitled Project'}
+                  </h2>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition-all hover:border-cyan-300 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-40"
+                    disabled={index === 0}
+                    onClick={() => moveProject(index, -1)}
+                    type="button"
+                    title="Move up"
+                  >
+                    <Icon className="text-[20px]">arrow_upward</Icon>
+                  </button>
+                  <button
+                    className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition-all hover:border-cyan-300 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-40"
+                    disabled={index === formData.length - 1}
+                    onClick={() => moveProject(index, 1)}
+                    type="button"
+                    title="Move down"
+                  >
+                    <Icon className="text-[20px]">arrow_downward</Icon>
+                  </button>
+                  <button
+                    className="flex h-10 w-10 items-center justify-center rounded-lg border border-red-100 text-red-600 transition-all hover:border-red-200 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                    disabled={formData.length === 1}
+                    onClick={() => removeProject(index)}
+                    type="button"
+                    title="Remove project"
+                  >
+                    <Icon className="text-[20px]">delete</Icon>
+                  </button>
+                </div>
+              </div>
+
+              <div className="mb-6 grid gap-5 rounded-2xl border border-slate-200 bg-slate-50 p-5 md:grid-cols-[220px_minmax(0,1fr)]">
+                <img
+                  alt={`${project.title || 'Project'} preview`}
+                  className="aspect-video w-full rounded-xl border border-slate-200 bg-white object-cover"
+                  src={project.image || defaultProjectsContent[0].image}
+                />
+                <div>
+                  <span className="mb-2 block text-sm font-semibold text-slate-700">
+                    Project Image
+                  </span>
+                  <label className="mb-3 inline-flex cursor-pointer items-center gap-2 rounded-xl bg-cyan-600 px-4 py-3 font-semibold text-white transition-all hover:bg-cyan-700 active:scale-95">
+                    <Icon className="text-[20px]">upload</Icon>
+                    {uploadingIndex === index ? 'Uploading...' : 'Upload Image'}
+                    <input
+                      accept="image/*"
+                      className="sr-only"
+                      disabled={uploadingIndex === index}
+                      onChange={(event) => handleImageUpload(event, index)}
+                      type="file"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-semibold text-slate-700">
+                      Image URL
+                    </span>
+                    <input
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none transition-all focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+                      onChange={(event) => updateProject(index, 'image', event.target.value)}
+                      placeholder="Uploaded image URL appears here"
+                      type="text"
+                      value={project.image}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div className="grid gap-5 md:grid-cols-2">
+                <label className="block">
+                  <span className="mb-2 block text-sm font-semibold text-slate-700">
+                    Title
+                  </span>
+                  <input
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none transition-all focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+                    onChange={(event) => updateProject(index, 'title', event.target.value)}
+                    type="text"
+                    value={project.title}
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-2 block text-sm font-semibold text-slate-700">
+                    Live URL
+                  </span>
+                  <input
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none transition-all focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+                    onChange={(event) => updateProject(index, 'liveUrl', event.target.value)}
+                    placeholder="https://example.com"
+                    type="url"
+                    value={project.liveUrl ?? ''}
+                  />
+                </label>
+              </div>
+
+              <label className="mt-5 block">
+                <span className="mb-2 block text-sm font-semibold text-slate-700">
+                  Description
+                </span>
+                <textarea
+                  className="min-h-32 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none transition-all focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+                  onChange={(event) => updateProject(index, 'description', event.target.value)}
+                  value={project.description}
+                />
+              </label>
+
+              <label className="mt-5 block">
+                <span className="mb-2 block text-sm font-semibold text-slate-700">
+                  Tags
+                </span>
+                <input
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none transition-all focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+                  onChange={(event) => updateProjectTags(index, event.target.value)}
+                  placeholder="REACT, SUPABASE, TAILWIND"
+                  type="text"
+                  value={tagText[index] ?? ''}
+                />
+              </label>
+            </article>
+          ))}
+        </div>
+
+        <aside className="space-y-6">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <button
+              className="mb-3 w-full rounded-xl border border-cyan-200 bg-cyan-50 py-3 font-semibold text-cyan-700 transition-all hover:border-cyan-300 hover:bg-cyan-100 active:scale-95"
+              onClick={addProject}
+              type="button"
+            >
+              Add Project
+            </button>
+            <button
+              className="w-full rounded-xl bg-cyan-600 py-4 font-bold text-white shadow-sm transition-all hover:-translate-y-1 hover:bg-cyan-700 hover:shadow-lg active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={isSaving}
+              type="submit"
+            >
+              {isSaving ? 'Saving...' : 'Save Changes'}
+            </button>
+            <button
+              className="mt-3 w-full rounded-xl border border-slate-200 py-3 font-semibold text-slate-700 transition-all hover:border-cyan-300 hover:text-cyan-700 active:scale-95"
+              onClick={handleReset}
+              type="button"
+            >
+              Reset Projects
+            </button>
+            {status && <p className="mt-4 text-center text-sm text-slate-600">{status}</p>}
+            {uploadStatus && <p className="mt-4 text-center text-sm text-slate-600">{uploadStatus}</p>}
+          </div>
+        </aside>
+      </form>
+    </section>
+  )
+}
+
 export default function AdminPanel() {
   const [activeModule, setActiveModule] = useState('dashboard')
   const [session, setSession] = useState(getAdminSession)
@@ -435,6 +763,8 @@ export default function AdminPanel() {
         <Dashboard onSelectModule={setActiveModule} />
       ) : activeModule === 'about' ? (
         <AboutEditor onBack={() => setActiveModule('dashboard')} />
+      ) : activeModule === 'projects' ? (
+        <ProjectsEditor onBack={() => setActiveModule('dashboard')} />
       ) : (
         <section className="mx-auto max-w-6xl px-5 py-14">
           <button className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-cyan-700" onClick={() => setActiveModule('dashboard')} type="button">
