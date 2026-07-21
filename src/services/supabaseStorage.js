@@ -58,3 +58,7 @@ export async function uploadProfileImage(file) {
 export async function uploadProjectImage(file) {
   return uploadImage(file, 'projects', 'project', 'Unable to upload project image.')
 }
+
+export async function uploadCertificateImage(file) {
+  return uploadImage(file, 'certificates', 'certificate', 'Unable to upload certificate image.')
+}

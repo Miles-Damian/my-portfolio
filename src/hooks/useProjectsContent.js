@@ -8,6 +8,7 @@ import {
 function normalizeProjects(projects) {
   return projects.map((project) => ({
     ...project,
+    certificateImage: project.certificateImage ?? '',
     tags: Array.isArray(project.tags) ? project.tags : [],
   }))
 }
