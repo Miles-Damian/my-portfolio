@@ -4,5 +4,6 @@ export const projectsContentStorageKey = 'miles-projects-content'
 
 export const defaultProjectsContent = projects.map((project) => ({
   ...project,
+  certificateImage: project.certificateImage ?? '',
   tags: [...project.tags],
 }))

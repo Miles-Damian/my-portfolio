@@ -14,7 +14,7 @@ import {
 import { isSupabaseConfigured } from '../services/aboutContentApi.js'
 import { isProjectsSupabaseConfigured } from '../services/projectsContentApi.js'
 import { getAdminSession, signInAdmin, signOutAdmin } from '../services/supabaseAuth.js'
-import { uploadProfileImage, uploadProjectImage } from '../services/supabaseStorage.js'
+import { uploadCertificateImage, uploadProfileImage, uploadProjectImage } from '../services/supabaseStorage.js'
 import Icon from './Icon.jsx'
 import useAboutContent from '../hooks/useAboutContent.js'
 import useProjectsContent from '../hooks/useProjectsContent.js'
@@ -59,6 +59,7 @@ const modules = [
 ]
 
 const blankProject = {
+  certificateImage: '',
   description: '',
   image: '',
   liveUrl: '',
@@ -443,7 +444,7 @@ function ProjectsEditor({ onBack }) {
   const [tagText, setTagText] = useState(() => createTagText(loadLocalProjectsContent()))
   const [status, setStatus] = useState('')
   const [uploadStatus, setUploadStatus] = useState('')
-  const [uploadingIndex, setUploadingIndex] = useState(null)
+  const [uploadingTarget, setUploadingTarget] = useState(null)
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
@@ -510,7 +511,7 @@ function ProjectsEditor({ onBack }) {
     }
 
     setUploadStatus('')
-    setUploadingIndex(index)
+    setUploadingTarget(`project-${index}`)
 
     try {
       const imageUrl = await uploadProjectImage(file)
@@ -520,7 +521,30 @@ function ProjectsEditor({ onBack }) {
     } catch (error) {
       setUploadStatus(error.message)
     } finally {
-      setUploadingIndex(null)
+      setUploadingTarget(null)
+      event.target.value = ''
+    }
+  }
+
+  const handleCertificateUpload = async (event, index) => {
+    const [file] = event.target.files
+
+    if (!file) {
+      return
+    }
+
+    setUploadStatus('')
+    setUploadingTarget(`certificate-${index}`)
+
+    try {
+      const imageUrl = await uploadCertificateImage(file)
+
+      updateProject(index, 'certificateImage', imageUrl)
+      setUploadStatus('Certificate image uploaded. Save changes to publish it.')
+    } catch (error) {
+      setUploadStatus(error.message)
+    } finally {
+      setUploadingTarget(null)
       event.target.value = ''
     }
   }
@@ -629,11 +653,11 @@ function ProjectsEditor({ onBack }) {
                   </span>
                   <label className="mb-3 inline-flex cursor-pointer items-center gap-2 rounded-xl bg-cyan-600 px-4 py-3 font-semibold text-white transition-all hover:bg-cyan-700 active:scale-95">
                     <Icon className="text-[20px]">upload</Icon>
-                    {uploadingIndex === index ? 'Uploading...' : 'Upload Image'}
+                    {uploadingTarget === `project-${index}` ? 'Uploading...' : 'Upload Image'}
                     <input
                       accept="image/*"
                       className="sr-only"
-                      disabled={uploadingIndex === index}
+                      disabled={uploadingTarget === `project-${index}`}
                       onChange={(event) => handleImageUpload(event, index)}
                       type="file"
                     />
@@ -677,6 +701,42 @@ function ProjectsEditor({ onBack }) {
                     value={project.liveUrl ?? ''}
                   />
                 </label>
+              </div>
+
+              <div className="mt-5 grid gap-5 rounded-2xl border border-slate-200 bg-slate-50 p-5 md:grid-cols-[220px_minmax(0,1fr)]">
+                <img
+                  alt={`${project.title || 'Project'} certificate preview`}
+                  className="aspect-video w-full rounded-xl border border-slate-200 bg-white object-contain"
+                  src={project.certificateImage || project.image || defaultProjectsContent[0].image}
+                />
+                <div>
+                  <span className="mb-2 block text-sm font-semibold text-slate-700">
+                    Certificate Image
+                  </span>
+                  <label className="mb-3 inline-flex cursor-pointer items-center gap-2 rounded-xl bg-cyan-600 px-4 py-3 font-semibold text-white transition-all hover:bg-cyan-700 active:scale-95">
+                    <Icon className="text-[20px]">upload</Icon>
+                    {uploadingTarget === `certificate-${index}` ? 'Uploading...' : 'Upload Certificate'}
+                    <input
+                      accept="image/*"
+                      className="sr-only"
+                      disabled={uploadingTarget === `certificate-${index}`}
+                      onChange={(event) => handleCertificateUpload(event, index)}
+                      type="file"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-semibold text-slate-700">
+                      Certificate URL
+                    </span>
+                    <input
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none transition-all focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+                      onChange={(event) => updateProject(index, 'certificateImage', event.target.value)}
+                      placeholder="Uploaded certificate URL appears here"
+                      type="text"
+                      value={project.certificateImage ?? ''}
+                    />
+                  </label>
+                </div>
               </div>
 
               <label className="mt-5 block">

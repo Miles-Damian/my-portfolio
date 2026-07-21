@@ -1,8 +1,27 @@
+import { useEffect, useState } from 'react'
 import useProjectsContent from '../hooks/useProjectsContent.js'
+import Icon from './Icon.jsx'
 import RevealItem from './RevealItem.jsx'
 
 export default function Projects() {
   const projects = useProjectsContent()
+  const [activeCertificate, setActiveCertificate] = useState(null)
+
+  useEffect(() => {
+    if (!activeCertificate) {
+      return undefined
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setActiveCertificate(null)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [activeCertificate])
 
   return (
     <section className="mx-auto max-w-container-max px-margin-mobile py-24 md:px-margin-desktop" id="projects">
@@ -47,14 +66,57 @@ export default function Projects() {
                 >
                   View Live
                 </a>
-                <button className="flex-1 rounded border border-outline py-2 text-sm font-bold text-on-surface transition-all duration-300 hover:-translate-y-1 hover:border-primary hover:bg-primary/10 hover:text-primary active:scale-95">
-                  Details
+                <button
+                  className={`flex-1 rounded border border-outline py-2 text-sm font-bold transition-all duration-300 active:scale-95 ${
+                    project.certificateImage
+                      ? 'text-on-surface hover:-translate-y-1 hover:border-primary hover:bg-primary/10 hover:text-primary'
+                      : 'cursor-not-allowed text-outline opacity-60'
+                  }`}
+                  disabled={!project.certificateImage}
+                  onClick={() => setActiveCertificate(project)}
+                  type="button"
+                >
+                  View Certificate
                 </button>
               </div>
             </div>
           </RevealItem>
         ))}
       </div>
+      {activeCertificate && (
+        <div
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 py-8 backdrop-blur-sm"
+          onClick={() => setActiveCertificate(null)}
+          role="dialog"
+        >
+          <div
+            className="relative flex max-h-full w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-outline bg-surface shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-4 border-b border-outline px-4 py-3">
+              <h3 className="text-base font-bold text-on-surface">
+                {activeCertificate.title} Certificate
+              </h3>
+              <button
+                aria-label="Close certificate"
+                className="flex h-10 w-10 items-center justify-center rounded border border-outline text-on-surface transition-all hover:border-primary hover:bg-primary/10 hover:text-primary active:scale-95"
+                onClick={() => setActiveCertificate(null)}
+                type="button"
+              >
+                <Icon className="text-[20px]">close</Icon>
+              </button>
+            </div>
+            <div className="overflow-auto bg-black p-4">
+              <img
+                alt={`${activeCertificate.title} certificate`}
+                className="mx-auto max-h-[75vh] w-auto max-w-full object-contain"
+                src={activeCertificate.certificateImage}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   )
 }
