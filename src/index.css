@@ -142,7 +142,19 @@ body {
 }
 
 .typewriter-text {
-  display: inline;
+  display: inline-grid;
+  max-width: 100%;
+  vertical-align: top;
+}
+
+.typewriter-measure,
+.typewriter-visible {
+  grid-area: 1 / 1;
+}
+
+.typewriter-measure {
+  pointer-events: none;
+  visibility: hidden;
 }
 
 .typewriter-cursor {
