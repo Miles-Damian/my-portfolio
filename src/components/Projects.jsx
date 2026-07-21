@@ -91,7 +91,7 @@ export default function Projects() {
           role="dialog"
         >
           <div
-            className="relative flex max-h-full w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-outline bg-surface shadow-2xl"
+            className="relative flex max-h-[calc(100dvh-4rem)] w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-outline bg-surface shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-4 border-b border-outline px-4 py-3">
@@ -107,10 +107,10 @@ export default function Projects() {
                 <Icon className="text-[20px]">close</Icon>
               </button>
             </div>
-            <div className="overflow-auto bg-black p-4">
+            <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto bg-black p-4">
               <img
                 alt={`${activeCertificate.title} certificate`}
-                className="mx-auto max-h-[75vh] w-auto max-w-full object-contain"
+                className="block max-h-[calc(100dvh-10rem)] max-w-full object-contain"
                 src={activeCertificate.certificateImage}
               />
             </div>
