@@ -54,9 +54,15 @@ export default function TypewriterText({
       className={`typewriter-text ${isPaused ? 'typewriter-text-paused' : ''}`}
       aria-label={phraseList.join(' ')}
     >
-      <span aria-hidden="true">{visibleText}</span>
-      <span className="typewriter-cursor" aria-hidden="true">
-        |
+      {phraseList.map((phrase, index) => (
+        <span className="typewriter-measure" aria-hidden="true" key={`${phrase}-${index}`}>
+          {phrase}
+          <span className="typewriter-cursor">|</span>
+        </span>
+      ))}
+      <span className="typewriter-visible" aria-hidden="true">
+        {visibleText}
+        <span className="typewriter-cursor">|</span>
       </span>
     </span>
   )
